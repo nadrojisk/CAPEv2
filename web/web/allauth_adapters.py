@@ -197,7 +197,7 @@ def _extract_groups(extra: dict) -> set:
     """Return the set of IdP group names from token extra data."""
     oidc_cfg = getattr(settings, "OIDC_CFG", None) or {}
     claim = oidc_cfg.get("groups_claim") or "groups"
-    raw = extra.get(claim) or []
+    raw = extra.get(claim) or extra.get("id_token", {}).get(claim) or []
     if isinstance(raw, str):
         raw = [raw]
     elif not isinstance(raw, (list, tuple, set)):
@@ -244,7 +244,7 @@ def _apply_idp_roles_and_email(user, extra: dict) -> bool:
     if admin_groups or super_groups:
         oidc_cfg = getattr(settings, "OIDC_CFG", None) or {}
         claim = oidc_cfg.get("groups_claim") or "groups"
-        if claim not in extra:
+        if claim not in extra and claim not in extra.get("id_token", {}):
             log.warning(
                 "OIDC groups claim %r absent from token for %s; skipping role reconciliation",
                 claim, user.username,
